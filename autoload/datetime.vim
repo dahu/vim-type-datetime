@@ -24,7 +24,7 @@ if exists("g:loaded_lib_datetime")
       \ || v:version < 700
       \ || &compatible
   let &cpo = s:save_cpo
-  finish
+  " finish
 endif
 let g:loaded_lib_datetime = 1
 

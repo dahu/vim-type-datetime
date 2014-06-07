@@ -1,0 +1,242 @@
+*datetime.txt*	Date/Time type for VimL
+
+
+			VIM REFERENCE MANUAL	by Barry Arthur
+
+
+Help on using datetime                                          *datetime*
+
+1. Introduction				|datetime-intro|
+2. datetime#new object generator	|datetime#new|
+3. datetime public functions		|datetime-functions|
+4. datetime#localtime			|datetime#localtime|
+5. Other				|datetime-other|
+
+==============================================================================
+ 1. INTRODUCTION                                          *datetime-intro*
+
+The vim-type-datetime library provides a datetime type and related
+functions for use from within your VimL scripts. The internal
+representation stores your localtime along with your timezone offset
+and the |datetime#to_utc_string()| function renders your datetime
+object in ISO 8601 full UTC (Zulu) format, like: yyyy-mm-ddThh:MM:ssZ
+
+Typically, one would use |datetime#new()| to generate full-blown
+datetime objects and then use the associated object methods to
+manipulate them as necessary.
+
+In addition to the full-blown datetime objects that datetime#new()
+generates, there is also the |datetime#localtime()| generator which
+returns an object representing the time as returned by |localtime()|
+along with timezone offset information. The only method available to
+|datetime#localtime()| objects is |to_seconds()|
+
+The |datetime#new()| generator stores a |datetime#localtime()|
+internally and can generate objects from |datetime#localtime()|
+objects if desired. In fact, any object can be a time source for the
+|datetime#new()| generator provided that it has a `to_seconds()`
+method.
+
+==============================================================================
+ 2. datetime#new                                            *datetime#new*
+
+|datetime#new()| is an object generator for datetime objects. It
+accepts an initialization value in several forms:
+
+* another datetime#new object
+* a datetime#localtime() object (or any object with a `to_seconds()` method)
+* a number of seconds since epoch (as returned by |localtime()|)
+* an ISO 8601 UTC string (e.g. 2014-06-07T14:53Z - as I'm writing this)
+
+                                                          *datetime#new()*
+datetime#new( [source-time] )
+
+Create a new `datetime` from a number of seconnds, an object with a
+`to_seconds()` method or an ISO 8601 datetime string.
+
+                                                    *datetime#new#compare*
+compare(other)
+
+Returns:
+ 0 if `other` date has the same number of seconds since epoch as `self`
+ 1 if `other` is after (bigger / later) than `self`
+-1 if `other` is before `self`
+
+                                                         *datetime#new#eq*
+eq(other)
+
+(boolean)
+Returns 1 (true) if `other` is equal to `self` (sepoch)
+
+                                                        *datetime#new#leq*
+leq(other)
+
+(boolean)
+Returns 1 (true) if `other` is less than or equal to `self` (sepoch)
+
+                                                        *datetime#new#geq*
+geq(other)
+
+(boolean)
+Returns 1 (true) if `other` is greater than or equal to `self` (sepoch)
+
+                                                     *datetime#new#before*
+before(other)
+
+(synonym for |datetime#new#leq()|)
+
+                                                      *datetime#new#after*
+after(other)
+
+(synonym for |datetime#new#geq()|)
+
+                                                       *datetime#new#diff*
+diff(other)
+
+Returns the difference between two dates as the number of seconds since epoch.
+
+                                                        *datetime#new#add*
+add(other)
+
+Adds `other` seconds to `self` seconds.
+
+                                                        *datetime#new#sub*
+sub(other)
+
+Subtracts `other` seconds from `self` seconds.
+
+                                                     *datetime#new#adjust*
+adjust(amount)
+
+Adjusts `self` based on the value provided. The value type can be:
+
+* any of the types covered by |datetime#to_seconds()| EXCEPT the UTC
+  string format
+
+* a string consisting of space separated `[+-]<number><type>` pairs
+  describing the adjustments. E.g.:
+>
+  1y 2m -3d 4h +5M 6s
+<
+                                               *datetime#new#to_gregorian*
+to_gregorian(julian-days)~
+
+Returns a list of [year, month, day] for the provided julian days.
+
+                                                 *datetime#new#to_seconds*
+to_seconds()
+
+Returns the value returned by the internal `datetime.to_seconds()`
+method. Effectively, the object's datetime representation as the
+number of seconds since Epoch (Jan 1, 1970)
+
+                                                  *datetime#new#to_string*
+to_string(...)
+
+Returns a string representation of datetime in the local timezone.
+
+                                              *datetime#new#to_utc_string*
+to_utc_string(...)
+
+Returns a string representation of datetime in UTC using ISO 8601 format.
+
+==============================================================================
+ 3. datetime public functions                         *datetime-functions*
+
+Helper Functions taken from Tim Pope's vim-speeddating~
+
+datetime#mod(a, b)~
+datetime#div(a, b)~
+datetime#gregorian(julian-days)~
+datetime#jd(year, month, day)~
+
+Conversion Functions~
+(most of these are self explanatory)
+
+datetime#minutes_to_seconds(minutes)~
+datetime#hours_to_seconds(hours)~
+datetime#days_to_seconds(days)~
+datetime#weeks_to_seconds(weeks)~
+datetime#months_to_seconds(months)~
+datetime#years_to_seconds(years)~
+datetime#utc_string_to_seconds(utc_string)~
+
+datetime#days_to_ymd_from_epoch(days from epoch)~
+datetime#jd_to_ymd(julian-days)~
+
+ymd is a list of the form [year, month, day]
+
+The `days_to_ymd` form shows the actual values of the corresponding date.
+The `days_to_ymd_from_epoch` form shows values relative to Epoch (Jan 1 1970).
+E.g. Given the date: 2014-06-07
+`days_to_ymd`            = [2014, 6, 7]
+`days_to_ymd_from_epoch` = [44, 5, 6]
+That is, 2014 is 44 years ahead of 1970.
+
+A code example:
+>
+    let dt = datetime#localtime()
+    echo datetime#days_to_ymd_from_epoch(dt.depoch)
+<
+OR, using a |datetime#new()| object:
+<
+    let dt = datetime#new()
+    echo datetime#days_to_ymd_from_epoch(dt.datetime.depoch)
+>
+
+datetime#jd_to_gregorian(julian-days)~
+
+gregorian is a dictionary of the form {'year': 2014, 'month': 6, 'day' 7}
+
+datetime#seconds_to_days(seconds)~
+
+datetime#to_seconds(datetime)~
+
+The `datetime` value can be:
+
+* A number representing seconds since epoch
+* Another |datetime#new()| or |datetime#localtime()| object
+* A string in ISO 8601 UTC format (e.g. 2014-06-07T16:27:00Z as I write this)
+
+Additional datetime Utility Functions~
+(see the descriptions given for the corresponding methods in |datetime#new()|)
+
+datetime#compare(datetime_1, datetime_2)~
+datetime#diff(datetime_1, datetime_2)~
+
+==============================================================================
+ 4. datetime#localtime                                *datetime-localtime*
+
+This generator expects an optional argument of the number of seconds
+since epoch as the initializer. If none is provided, |localtime()| is
+used by default.
+
+The |datetime#new()| generator uses a `datetime#localtime()` object
+internally, accessed through the `datetime` field. All of the actual
+date and time information resides within this internal object.
+
+The fields of the `datetime#localtime()` object are:
+
+* year
+* month
+* day
+* hour
+* minute
+* second
+* sepoch       = seconds since epoch (Jan 1, 1970)
+* smicro       = microseconds (if available)
+* depoch       = days since epoch (Jan 1, 1970)
+* stzoffset    = timezone offset from UTC in seconds
+* mtzoffset    = timezone offset from UTC in minutes
+* htzoffset    = timezone offset from UTC in hours
+* to_seconds() = a method returning the `sepoch` field
+
+==============================================================================
+ 5. OTHER                                                 *datetime-other*
+
+Known Bugs~
+
+There might be some timezone bugs. Please let the developer know if you find any.
+
+Template From: https://github.com/dahu/Area-41/
+ vim:tw=78:ts=8:ft=help:norl:
