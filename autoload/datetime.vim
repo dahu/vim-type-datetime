@@ -1,3 +1,43 @@
+" Vim library providing datetime type
+" Maintainer:	Barry Arthur <barry.arthur@gmail.com>
+" Version:	0.1
+" Description:	datetime type for VimL. Create dates from seconds, iso 8601
+"		strings, or other datetime objects. Compare, diff and adjust
+"		dates. Store dates in iso 8601 UTC (Zulu) format strings.
+" Last Change:	2014-06-07
+" License:	Vim License (see :help license)
+" Location:	autoload/datetime.vim
+" Website:	https://github.com/dahu/datetime
+"
+" See datetime.txt for help.  This can be accessed by doing:
+"
+" :helptags ~/.vim/doc
+" :help datetime
+
+" Vimscript Setup: {{{1
+" Allow use of line continuation.
+let s:save_cpo = &cpo
+set cpo&vim
+
+" load guard
+if exists("g:loaded_lib_datetime")
+      \ || v:version < 700
+      \ || &compatible
+  let &cpo = s:save_cpo
+  finish
+endif
+let g:loaded_lib_datetime = 1
+
+" Vim Script Information Function: {{{1
+function! datetime#info()
+  let info = {}
+  let info.name = 'datetime'
+  let info.version = 1.0
+  let info.description = 'datetime type for VimL'
+  let info.dependencies = []
+  return info
+endfunction
+
 " Helper functions taken from Tim Pope's vim-speeddating {{{1
 
 " In Vim, -4 % 3 == -1.  Let's return 2 instead.
@@ -79,8 +119,8 @@ function! datetime#localtime(...)
   return datetime
 endfunction
 " }}}1
-
 " datetime conversion functions {{{1
+
 function! datetime#minutes_to_seconds(minutes)
   return a:minutes * 60
 endfunction
@@ -141,7 +181,6 @@ function! datetime#utc_string_to_seconds(utc_s)
     return seconds
 endfunction
 
-
 function! datetime#to_seconds(datetime)
   let dt = a:datetime
   let seconds = 0
@@ -164,10 +203,8 @@ function! datetime#to_seconds(datetime)
   endif
   return seconds
 endfunction
-
 " }}}1
-
-" additional datetime utility functions {{{1
+" Additional datetime utility functions {{{1
 
 " datetime#compare(datetime, datetime) - for sort()
 function! datetime#compare(d1, d2)
@@ -183,8 +220,8 @@ function! datetime#diff(d1, d2)
   return s1 - s2
 endfunc
 " }}}1
+" DateTime Type {{{1
 
-" datetime type {{{1
 function! datetime#new(...)
   let obj = {}
   let obj.utcz_format = '%Y-%m-%dT%H:%M:%SZ'
@@ -296,9 +333,8 @@ function! datetime#new(...)
   return obj.initialize(dt)
 endfunction
 
-
-
-" unit tests that are only run when loaded as   :source %
+" }}}1
+" Unit Tests (only run when loaded as   :source %) {{{1
 if expand('%:p') == expand('<sfile>:p')
   let s:idx = 1
 
@@ -390,4 +426,10 @@ if expand('%:p') == expand('<sfile>:p')
   call AssertEq(d6.adjust('1d').to_seconds(), y.adjust('1d').to_seconds())
 endif
 
-" vim: fdm=marker
+" }}}1
+" Teardown:{{{1
+"reset &cpo back to users setting
+let &cpo = s:save_cpo
+
+" Template From: https://github.com/dahu/Area-41/
+" vim: set sw=2 sts=2 et fdm=marker:
