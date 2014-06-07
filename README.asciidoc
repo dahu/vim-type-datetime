@@ -7,3 +7,36 @@ TIP: If you like vim-type-datetime and want to share the W00t!, I'm grateful for
 https://www.gittip.com/bairuidahu/[tips] or
 http://of-vim-and-vigor.blogspot.com/[beverages].
 
+Quick Look
+~~~~~~~~~~
+
+  let today = datetime#new()
+  echo today.to_utc_string()
+  => 2014-06-07T08:53:18Z
+
+  let yesterday = datetime#new('2014-06-06T08:53:18Z')
+  echo today.diff(yesterday)
+  => 86400
+
+  echo datetime#seconds_to_days(today.diff(yesterday))
+  => 1
+
+  call today.add(datetime#days_to_seconds(1))
+  echo datetime#seconds_to_days(today.diff(yesterday))
+  => 2
+
+  call today.sub(datetime#weeks_to_seconds(1))
+  echo datetime#seconds_to_days(today.diff(yesterday))
+  => -5
+
+  call today.adjust('-1y')
+  echo datetime#seconds_to_days(today.diff(yesterday))
+  => -371
+
+  echo today.to_gregorian()
+  => {'day': 1, 'year': 2013, 'month': 6}
+
+  echo today.adjust('7m 14d').to_string()
+  => 2014-01-15T08:00:00Z
+
+See the provided documentation for more.
