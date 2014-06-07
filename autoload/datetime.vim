@@ -107,15 +107,8 @@ function! datetime#new(...)
     elseif type(init_time) == type('')
       if init_time == ''
         let self.datetime = datetime#localtime()
-      elseif init_time =~ '^\d\{4\}-\d\d-\d\dT\d\d:\d\d:\d\dZ$'
-        let [y, m, d, h, M, s] = matchlist(init_time,
-              \ '^\(\d\{4\}\)-\(\d\d\)-\(\d\d\)T\(\d\d\):\(\d\d\):\(\d\d\)Z$')[1:6]
-        let seconds  = s
-        let seconds += datetime#minutes_to_seconds(M)
-        let seconds += datetime#hours_to_seconds(h)
-        let seconds += datetime#days_to_seconds(datetime#jd(y, m, d) - s:epoch_jd)
       else
-        throw 'Unknown date format: ' . type
+        return self.from_utc_s(init_time)
       endif
     else
       throw 'Unexpected init_time type: ' . string(type)
@@ -124,6 +117,20 @@ function! datetime#new(...)
       let self.datetime = datetime#localtime(seconds)
     endif
     return self
+  endfunc
+
+  func obj.from_utc_s(utc_s)
+    if a:utc_s =~ '^\d\{4\}-\d\d-\d\dT\d\d:\d\d:\d\dZ$'
+      let [y, m, d, h, M, s] = matchlist(a:utc_s,
+            \ '^\(\d\{4\}\)-\(\d\d\)-\(\d\d\)T\(\d\d\):\(\d\d\):\(\d\d\)Z$')[1:6]
+      let seconds  = s
+      let seconds += datetime#minutes_to_seconds(M)
+      let seconds += datetime#hours_to_seconds(h)
+      let seconds += datetime#days_to_seconds(datetime#jd(y, m, d) - s:epoch_jd)
+    else
+      throw 'Unknown date format: ' . type
+    endif
+    return datetime#new(seconds)
   endfunc
 
   func obj.compare(other)
@@ -166,8 +173,9 @@ function! datetime#new(...)
     return self
   endfunc
 
-  func obj.adjust(amount)
+  func obj.adjust(amount) dict
     let amount = a:amount
+    let adjusted = 0
     if type(amount) == type(0)
       let seconds = amount
     elseif type(amount) == type({})
@@ -181,18 +189,20 @@ function! datetime#new(...)
     elseif type(amount) == type('')
       " space separated entries
       " e.g.   1y 2m -3d 4h +5M 6s
+      " NOTE: 'm' and 'M' are case sensitive, but the others are not
       let seconds = 0
+      let [y, m , d] = [self.datetime.year, self.datetime.month, self.datetime.day]
       for amt in split(amount, '\s\+')
-        let [n, type] = matchlist(amt, '\c\([-+]\?\d\+\)\([ymbdhMs]\)')[1:2]
+        let [n, type] = matchlist(amt, '\c\([-+]\?\d\+\)\([ymdhs]\)')[1:2]
         if type == 'y'
-          let seconds += datetime#years_to_seconds(n)
-        elseif (type == 'm' || type == 'b')  " handle tpope's speeddating convention
-          let seconds += datetime#months_to_seconds(n)
+          let y += n
+        elseif type ==# 'm'
+          let m += n
         elseif type == 'd'
-          let seconds += datetime#days_to_seconds(n)
+          let d += n
         elseif type == 'h'
           let seconds += datetime#hours_to_seconds(n)
-        elseif type == 'M'
+        elseif type ==# 'M'
           let seconds += datetime#minutes_to_seconds(n)
         elseif type == 's'
           let seconds += n
@@ -200,10 +210,15 @@ function! datetime#new(...)
           throw 'Unknown adjustment type: ' . string(type)
         endif
       endfor
+      let seconds += datetime#days_to_seconds(datetime#jd(y, m, d) - s:epoch_jd)
+      let self.datetime = datetime#localtime(seconds)
+      let adjusted = 1
     else
       throw 'Unexpected amount type: ' . string(type)
     endif
-    let self.datetime = datetime#localtime(self.datetime.sepoch + seconds)
+    if ! adjusted
+      let self.datetime = datetime#localtime(self.datetime.sepoch + seconds)
+    endif
     return self
   endfunction
 
@@ -265,6 +280,21 @@ if expand('%:p') == expand('<sfile>:p')
   call AssertEq('1970-01-01T00:00:00Z', d5.to_utc_s())
   call AssertEq('1960-01-01T00:00:00Z', d6.to_utc_s())
   call AssertEq('1980-01-01T00:00:00Z', d7.to_utc_s())
+
+  " adjusting datetimes
+  call d5.adjust('1y 2m 3d 4h 5M 6s')
+  call AssertEq('1971-03-04T04:05:06Z', d5.to_utc_s())
+  call d6.adjust('-1y -2m -3d -4h -5M -6s')
+  " 1959-01-01:00:00:00
+  " 1958-11-01:00:00:00
+  " 1958-10-29:00:00:00
+  " 1958-10-28:20:00:00
+  " 1958-10-28:19:55:00
+  " 1958-10-28:19:54:54
+  call AssertEq('1958-10-28T19:54:54Z', d6.to_utc_s())
+  let x = d6.to_utc_s()
+  let y = datetime#new(x)
+  call AssertEq(d6.to_utc_s(), y.to_utc_s())
 endif
 
 " vim: fdm=marker
