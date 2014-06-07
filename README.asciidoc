@@ -1,0 +1,9 @@
+vim-type-datetime
+-----------------
+
+__Date/Time Objects for VimL__
+
+TIP: If you like vim-type-datetime and want to share the W00t!, I'm grateful for
+https://www.gittip.com/bairuidahu/[tips] or
+http://of-vim-and-vigor.blogspot.com/[beverages].
+
