@@ -181,6 +181,38 @@ function! datetime#utc_string_to_seconds(utc_s)
     return seconds
 endfunction
 
+" Accepts a localtime in the following format:
+" 2014-01-25 Sat 19:36
+" yyyy-mm-dd day HH:MM
+"   %Y-%m-%d %a  %H:%M     (in strftime format)
+function! datetime#ymdahm_string_to_seconds(ymdahm_s)
+    if a:ymdahm_s =~ '^\d\{4\}-\d\d-\d\d \w\w\w \d\d:\d\d$'
+      let [y, m, d, a, h, M] = matchlist(a:ymdahm_s,
+            \ '^\(\d\{4\}\)-\(\d\d\)-\(\d\d\) \(\w\w\w\) \(\d\d\):\(\d\d\)$')[1:6]
+      let seconds  = datetime#minutes_to_seconds(M)
+      let seconds += datetime#hours_to_seconds(h)
+      let seconds += datetime#days_to_seconds(datetime#jd(y, m, d) - s:epoch_jd)
+    else
+      throw 'Unrecognised date format: ' . a:ymdahm_s
+    endif
+    return seconds
+endfunction
+
+" Accepts a localtime in the following format:
+" 2014-01-24 Fri
+" yyyy-mm-dd day
+"   %Y-%m-%d %a            (in strftime format)
+function! datetime#ymda_string_to_seconds(ymda_s)
+    if a:ymda_s =~ '^\d\{4\}-\d\d-\d\d \w\w\w$'
+      let [y, m, d, a] = matchlist(a:ymda_s,
+            \ '^\(\d\{4\}\)-\(\d\d\)-\(\d\d\) \(\w\w\w\)$')[1:4]
+      let seconds = datetime#days_to_seconds(datetime#jd(y, m, d) - s:epoch_jd)
+    else
+      throw 'Unrecognised date format: ' . a:ymda_s
+    endif
+    return seconds
+endfunction
+
 function! datetime#to_seconds(datetime)
   let dt = a:datetime
   let seconds = 0
@@ -322,7 +354,7 @@ function! datetime#new(...)
 
   func obj.to_string(...) dict
     let format = a:0 ? a:1 : self.utcz_format
-    return strftime(format, self.datetime.to_seconds())
+    return strftime(format, self.datetime.sepoch - self.datetime.stzoffset)
   endfunc
 
   func obj.to_utc_string(...) dict
