@@ -18,8 +18,10 @@ Help on using datetime                                          *datetime*
 The vim-type-datetime library provides a datetime type and related
 functions for use from within your VimL scripts. The internal
 representation stores your localtime along with your timezone offset
-and the |datetime#to_utc_string()| function renders your datetime
+and the |datetime#to_string()| function renders your datetime
 object in ISO 8601 full UTC (Zulu) format, like: yyyy-mm-ddThh:MM:ssZ
+Use the |datetime#to_localtime_string()| function to render the datetime
+object using the local timezone.
 
 Typically, one would use |datetime#new()| to generate full-blown
 datetime objects and then use the associated object methods to
@@ -133,12 +135,12 @@ number of seconds since Epoch (Jan 1, 1970)
                                                   *datetime#new#to_string*
 to_string(...)
 
-Returns a string representation of datetime in the local timezone.
-
-                                              *datetime#new#to_utc_string*
-to_utc_string(...)
-
 Returns a string representation of datetime in UTC using ISO 8601 format.
+
+                                        *datetime#new#to_localtime_string*
+to_localtime_string(...)
+
+Returns a string representation of datetime in the local timezone.
 
 ==============================================================================
  3. datetime public functions                         *datetime-functions*

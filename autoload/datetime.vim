@@ -195,7 +195,8 @@ function! datetime#ymdahm_string_to_seconds(ymdahm_s)
     else
       throw 'Unrecognised date format: ' . a:ymdahm_s
     endif
-    return seconds
+    let lt = datetime#localtime(seconds)
+    return lt.sepoch - lt.stzoffset
 endfunction
 
 " Accepts a localtime in the following format:
@@ -210,7 +211,8 @@ function! datetime#ymda_string_to_seconds(ymda_s)
     else
       throw 'Unrecognised date format: ' . a:ymda_s
     endif
-    return seconds
+    let lt = datetime#localtime(seconds)
+    return lt.sepoch - lt.stzoffset
 endfunction
 
 function! datetime#to_seconds(datetime)
@@ -257,6 +259,7 @@ endfunc
 function! datetime#new(...)
   let obj = {}
   let obj.utcz_format = '%Y-%m-%dT%H:%M:%SZ'
+  let obj.iso8601_no_tz_format = '%Y-%m-%dT%H:%M:%S'
   let dt = a:0 ? a:1 : ''
 
   func obj.initialize(...) dict
@@ -352,14 +355,16 @@ function! datetime#new(...)
     return self.datetime.to_seconds()
   endfunc
 
+  " Adjusts for local TZ back to UTC - shows datetime in UTC
   func obj.to_string(...) dict
     let format = a:0 ? a:1 : self.utcz_format
     return strftime(format, self.datetime.sepoch - self.datetime.stzoffset)
   endfunc
 
-  func obj.to_utc_string(...) dict
-    let format = a:0 ? a:1 : self.utcz_format
-    return strftime(format, self.datetime.to_seconds() - self.datetime.stzoffset)
+  " Use this if you created a UTC datetime and want to show it in local TZ
+  func obj.to_localtime_string(...) dict
+    let format = a:0 ? a:1 : self.iso8601_no_tz_format
+    return strftime(format, self.datetime.sepoch)
   endfunc
 
   return obj.initialize(dt)
@@ -418,9 +423,9 @@ if expand('%:p') == expand('<sfile>:p')
   let d5 = datetime#new('1970-01-01T00:00:00Z')
   let d6 = datetime#new('1960-01-01T00:00:00Z')
   let d7 = datetime#new('1980-01-01T00:00:00Z')
-  call AssertEq('1970-01-01T00:00:00Z', d5.to_utc_string())
-  call AssertEq('1960-01-01T00:00:00Z', d6.to_utc_string())
-  call AssertEq('1980-01-01T00:00:00Z', d7.to_utc_string())
+  call AssertEq('1970-01-01T00:00:00Z', d5.to_string())
+  call AssertEq('1960-01-01T00:00:00Z', d6.to_string())
+  call AssertEq('1980-01-01T00:00:00Z', d7.to_string())
   call AssertEq([1970, 1, 1], datetime#jd_to_ymd(d5.datetime.depoch))
   call AssertEq({'year':1970, 'month':1, 'day':1 }, d5.to_gregorian())
   call AssertEq([0, 0, 0], datetime#days_to_ymd_from_epoch(d5.datetime.depoch))
@@ -438,7 +443,7 @@ if expand('%:p') == expand('<sfile>:p')
 
   " adjusting datetimes
   call d5.adjust('1y 2m 3d 4h 5M 6s')
-  call AssertEq('1971-03-04T04:05:06Z', d5.to_utc_string())
+  call AssertEq('1971-03-04T04:05:06Z', d5.to_string())
   call d6.adjust('-1y -2m -3d -4h -5M -6s')
   " 1959-01-01:00:00:00
   " 1958-11-01:00:00:00
@@ -446,14 +451,14 @@ if expand('%:p') == expand('<sfile>:p')
   " 1958-10-28:20:00:00
   " 1958-10-28:19:55:00
   " 1958-10-28:19:54:54
-  call AssertEq('1958-10-28T19:54:54Z', d6.to_utc_string())
+  call AssertEq('1958-10-28T19:54:54Z', d6.to_string())
   call AssertEq({'year':1958, 'month':10, 'day':29 }, d6.to_gregorian())
   " discrepancy between 'day' values there due to timezone of author
 
-  call AssertEq('1980-01-02T00:00:00Z', d7.add(datetime#days_to_seconds(1)).to_utc_string())
-  call AssertEq('1980-01-01T00:00:00Z', d7.sub(datetime#days_to_seconds(1)).to_utc_string())
+  call AssertEq('1980-01-02T00:00:00Z', d7.add(datetime#days_to_seconds(1)).to_string())
+  call AssertEq('1980-01-01T00:00:00Z', d7.sub(datetime#days_to_seconds(1)).to_string())
 
-  let x = d6.to_utc_string()
+  let x = d6.to_string()
   let y = datetime#new(x)
   call AssertEq(d6.adjust('1d').to_seconds(), y.adjust('1d').to_seconds())
 endif
