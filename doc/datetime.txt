@@ -53,7 +53,7 @@ accepts an initialization value in several forms:
                                                           *datetime#new()*
 datetime#new( [source-time] )
 
-Create a new `datetime` from a number of seconnds, an object with a
+Create a new `datetime` from a number of seconds, an object with a
 `to_seconds()` method or an ISO 8601 datetime string.
 
                                                     *datetime#new#compare*

@@ -319,6 +319,7 @@ function! datetime#new(...)
       let [y, m , d] = datetime#jd_to_ymd(self.datetime.depoch)
       for amt in split(amount, '\s\+')
         let [n, type] = matchlist(amt, '\c\([-+]\?\d\+\)\([ymdhs]\)')[1:2]
+        let n = str2nr(n)
         if type == 'y'
           let y += n
         elseif type ==# 'm'
@@ -457,6 +458,10 @@ if expand('%:p') == expand('<sfile>:p')
 
   call AssertEq('1980-01-02T00:00:00Z', d7.add(datetime#days_to_seconds(1)).to_string())
   call AssertEq('1980-01-01T00:00:00Z', d7.sub(datetime#days_to_seconds(1)).to_string())
+
+  let d7 = datetime#new('1980-01-01T00:00:00Z')
+  call d7.adjust('+1m')
+  call AssertEq('1980-02-01T00:00:00Z', d7.to_string())
 
   let x = d6.to_string()
   let y = datetime#new(x)
