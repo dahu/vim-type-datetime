@@ -315,7 +315,10 @@ function! datetime#new(...)
       " space separated entries
       " e.g.   1y 2m -3d 4h +5M 6s
       " NOTE: 'm' and 'M' are case sensitive, but the others are not
-      let seconds = 0
+      let seconds = self.datetime.second
+            \ + datetime#minutes_to_seconds(self.datetime.minute)
+            \ + datetime#hours_to_seconds(self.datetime.hour)
+            \ - self.datetime.stzoffset
       let [y, m , d] = datetime#jd_to_ymd(self.datetime.depoch)
       for amt in split(amount, '\s\+')
         let [n, type] = matchlist(amt, '\c\([-+]\?\d\+\)\([ymdhs]\)')[1:2]
@@ -459,9 +462,13 @@ if expand('%:p') == expand('<sfile>:p')
   call AssertEq('1980-01-02T00:00:00Z', d7.add(datetime#days_to_seconds(1)).to_string())
   call AssertEq('1980-01-01T00:00:00Z', d7.sub(datetime#days_to_seconds(1)).to_string())
 
-  let d7 = datetime#new('1980-01-01T00:00:00Z')
+  let d7 = datetime#new('1980-01-01T01:02:03Z')
+  call d7.adjust('+1y')
+  call AssertEq('1981-01-01T01:02:03Z', d7.to_string())
   call d7.adjust('+1m')
-  call AssertEq('1980-02-01T00:00:00Z', d7.to_string())
+  call AssertEq('1981-02-01T01:02:03Z', d7.to_string())
+  call d7.adjust('+1d')
+  call AssertEq('1981-02-02T01:02:03Z', d7.to_string())
 
   let x = d6.to_string()
   let y = datetime#new(x)
