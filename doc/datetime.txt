@@ -163,6 +163,47 @@ datetime#months_to_seconds(months)~
 datetime#years_to_seconds(years)~
 datetime#utc_string_to_seconds(utc_string)~
 
+
+datetime#utc_string_to_seconds(utc_s)~
+
+Accepts a fully formed ISO 8601 datetime string in UTC:
+yyyy-mm-ddThh:MM:ssZ
+  %Y-%m-%dT%H:%M:%SZ     (in strftime format)
+
+
+datetime#ymdahm_string_to_seconds(ymdahm_s)~
+
+Accepts a localtime in the following format:
+2014-01-25 Sat 19:36
+yyyy-mm-dd day HH:MM
+  %Y-%m-%d %a  %H:%M     (in strftime format)
+
+
+datetime#ymda_string_to_seconds(ymda_s)~
+
+Accepts a localtime in the following format:
+2014-01-25 Sat
+2014-01-25
+yyyy-mm-dd [day]         (optional day)
+  %Y-%m-%d [%a]          (in strftime format)
+
+
+datetime#dmy_string_to_seconds(dmy_s)~
+
+Accepts a localtime in the following format:
+25-01-2014
+dd-mm-yyyy
+  %d-%m-%Y               (in strftime format)
+
+
+datetime#mdy_string_to_seconds(mdy_s)~
+
+Accepts a localtime in the following format:
+01-25-2014
+mm-dd-yyyy
+  %m-%d-%Y               (in strftime format)
+
+
 datetime#days_to_ymd_from_epoch(days from epoch)~
 datetime#jd_to_ymd(julian-days)~
 

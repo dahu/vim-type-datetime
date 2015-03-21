@@ -1,6 +1,5 @@
 " Vim library providing datetime type
 " Maintainer:	Barry Arthur <barry.arthur@gmail.com>
-" Version:	0.1
 " Description:	datetime type for VimL. Create dates from seconds, iso 8601
 "		strings, or other datetime objects. Compare, diff and adjust
 "		dates. Store dates in iso 8601 UTC (Zulu) format strings.
@@ -201,18 +200,28 @@ endfunction
 
 " Accepts a localtime in the following format:
 " 2014-01-24 Fri
-" yyyy-mm-dd day
-"   %Y-%m-%d %a            (in strftime format)
+" yyyy-mm-dd [day]
+"   %Y-%m-%d               (in strftime format)
 function! datetime#ymda_string_to_seconds(ymda_s)
-    if a:ymda_s =~ '^\d\{4\}-\d\d-\d\d \w\w\w$'
+    if a:ymda_s =~ '^\d\{4\}-\d\d-\d\d\( \w\w\w\)\?$'
       let [y, m, d, a] = matchlist(a:ymda_s,
-            \ '^\(\d\{4\}\)-\(\d\d\)-\(\d\d\) \(\w\w\w\)$')[1:4]
+            \ '^\(\d\{4\}\)-\(\d\d\)-\(\d\d\)\%( \(\w\w\w\)\)\?$')[1:4]
       let seconds = datetime#days_to_seconds(datetime#jd(y, m, d) - s:epoch_jd)
     else
       throw 'Unrecognised date format: ' . a:ymda_s
     endif
     let lt = datetime#localtime(seconds)
     return lt.sepoch - lt.stzoffset
+endfunction
+
+function! datetime#dmy_string_to_seconds(dmy_s)
+  return datetime#ymda_string_to_seconds(
+        \ substitute(a:dmy_s, '\(\d\d\).\(\d\d\).\(\d\{4}\)', '\3-\2-\1', ''))
+endfunction
+
+function! datetime#mdy_string_to_seconds(mdy_s)
+  return datetime#ymda_string_to_seconds(
+        \ substitute(a:mdy_s, '\(\d\d\).\(\d\d\).\(\d\{4}\)', '\3-\1-\2', ''))
 endfunction
 
 function! datetime#to_seconds(datetime)
@@ -473,6 +482,17 @@ if expand('%:p') == expand('<sfile>:p')
   let x = d6.to_string()
   let y = datetime#new(x)
   call AssertEq(d6.adjust('1d').to_seconds(), y.adjust('1d').to_seconds())
+
+
+  " conversion from other date formats
+  let d8 = datetime#new(datetime#ymda_string_to_seconds('2015-03-21 Sat'))
+  call AssertEq(d8.to_localtime_string(), '2015-03-21T00:00:00')
+  let d8 = datetime#new(datetime#ymda_string_to_seconds('2015-03-21'))
+  call AssertEq(d8.to_localtime_string(), '2015-03-21T00:00:00')
+  let d8 = datetime#new(datetime#dmy_string_to_seconds('21-03-2015'))
+  call AssertEq(d8.to_localtime_string(), '2015-03-21T00:00:00')
+  let d8 = datetime#new(datetime#mdy_string_to_seconds('03-21-2015'))
+  call AssertEq(d8.to_localtime_string(), '2015-03-21T00:00:00')
 endif
 
 " }}}1
